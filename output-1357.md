@@ -14,7 +14,7 @@
 9. filtering on contract_name and categories_name at ambassador listing
 10. Creating subjob with subjob creation.xls without address upload failed
 11. adding video to project, bad request
-12. Availability check on job application. 
+12. Availability check on job application.
 13. invalid state UPDATE
 14. custom filters supporting job category name
 15. Project filtering on list page

@@ -98,38 +98,40 @@ class JiraToMd(object):
         sprint = self.jira_service.get_sprint_info(
             sprint_id=sprint_id)
         sprint_name = sprint['name']
-        sprint_start_date = self.datetime_service.get_datetime_str_from_str_to_str(
-            from_datetime_str=sprint['startDate'])
+        # TODO: Have to fix the date time format
+        # sprint_start_date = self.datetime_service.get_datetime_str_from_str_to_str(
+        #     from_datetime_str=sprint['startDate'])
+        sprint_start_date = str(sprint['startDate'])
 
-        sprint_end_date = self.datetime_service.get_datetime_str_from_str_to_str(
-            from_datetime_str=sprint['endDate'])
-
-        formal_sprint_start_date = self.datetime_service.get_datetime_str_from_str_to_str(
-            from_datetime_str=sprint_start_date,
-            from_datetime_format=self.datetime_service.OUTPUT_DATETIME_FORMAT,
-            to_datetime_format=self.datetime_service.DATE_FORMAT)
-        formal_sprint_end_date = self.datetime_service.get_datetime_str_from_str_to_str(
-            from_datetime_str=sprint_end_date,
-            from_datetime_format=self.datetime_service.OUTPUT_DATETIME_FORMAT,
-            to_datetime_format=self.datetime_service.DATE_FORMAT)
-
-        qa_release_date = self.datetime_service.add_days_to_date(
-            datetime_str=sprint_start_date,
-            datetime_format=self.datetime_service.OUTPUT_DATETIME_FORMAT,
-            days=8)
-        formal_qa_release_date = self.datetime_service.get_datetime_str_from_str_to_str(
-            from_datetime_str=qa_release_date,
-            from_datetime_format=self.datetime_service.OUTPUT_DATETIME_FORMAT,
-            to_datetime_format=self.datetime_service.DATE_FORMAT)
-
-        client_release_date = self.datetime_service.add_days_to_date(
-            datetime_str=sprint_end_date,
-            datetime_format=self.datetime_service.OUTPUT_DATETIME_FORMAT,
-            days=3)
-        formal_client_release_date = self.datetime_service.get_datetime_str_from_str_to_str(
-            from_datetime_str=client_release_date,
-            from_datetime_format=self.datetime_service.OUTPUT_DATETIME_FORMAT,
-            to_datetime_format=self.datetime_service.DATE_FORMAT)
+        # sprint_end_date = self.datetime_service.get_datetime_str_from_str_to_str(
+        #     from_datetime_str=sprint['endDate'])
+        sprint_end_date = str(sprint['endDate'])
+        formal_sprint_start_date = str(sprint_start_date)
+        # formal_sprint_start_date = self.datetime_service.get_datetime_str_from_str_to_str(
+        #     from_datetime_str=sprint_start_date,
+        #     from_datetime_format=self.datetime_service.OUTPUT_DATETIME_FORMAT,
+        #     to_datetime_format=self.datetime_service.DATE_FORMAT)
+        formal_sprint_end_date = str(sprint_end_date)
+        qa_release_date = ''
+        # qa_release_date = self.datetime_service.add_days_to_date(
+        #     datetime_str=sprint_start_date,
+        #     datetime_format=self.datetime_service.OUTPUT_DATETIME_FORMAT,
+        #     days=8)
+        formal_qa_release_date = ''
+        # formal_qa_release_date = self.datetime_service.get_datetime_str_from_str_to_str(
+        #     from_datetime_str=qa_release_date,
+        #     from_datetime_format=self.datetime_service.OUTPUT_DATETIME_FORMAT,
+        #     to_datetime_format=self.datetime_service.DATE_FORMAT)
+        client_release_date = ''
+        # client_release_date = self.datetime_service.add_days_to_date(
+        #     datetime_str=sprint_end_date,
+        #     datetime_format=self.datetime_service.OUTPUT_DATETIME_FORMAT,
+        #     days=3)
+        formal_client_release_date = ''
+        # formal_client_release_date = self.datetime_service.get_datetime_str_from_str_to_str(
+        #     from_datetime_str=client_release_date,
+        #     from_datetime_format=self.datetime_service.OUTPUT_DATETIME_FORMAT,
+        #     to_datetime_format=self.datetime_service.DATE_FORMAT)
 
         return {
             'sprint_name': sprint_name,
@@ -186,6 +188,9 @@ class JiraToMd(object):
     def get_estimations_info(self):
         estimations_str = ''
         timetracker_list = []
+        timetracker_hrs = 0
+        timetracker_estimated_seconds = 0
+        timetracker_remaining_seconds = 0
         timetracker_estimated_seconds_list = []
         timetracker_remaining_seconds_list = []
         timetracker_hrs_list = []
@@ -205,28 +210,42 @@ class JiraToMd(object):
 
         issues = self.jira_service.get_issues_of_an_epic(
             epic_id=epic_id)
-
         s_i = 1
         for issue in issues:
+            summary = ''
+            estimated_hrs = ''
+            if 'originalEstimate' in issue['fields']['timetracking'].keys():
+                estimated_hrs = issue['fields']['timetracking']['originalEstimate']
+            # if hasattr(issue['fields'], 'summary'):
+            summary = issue['fields']['summary']
+            #     print(issue['fields']['summary'])
             issue_str = "{s_i}. {summary} `{estimated_hrs}`\n".format(
                 s_i=s_i,
-                summary=issue['fields']['summary'].replace(
+                summary=summary.replace(
                     self.REPLACE_STR_FROM_ISSUES_NAME, ''),
-                estimated_hrs=issue['fields']['timetracking']['originalEstimate']
-            )
+                estimated_hrs=estimated_hrs)
             s_i += 1
             estimations_str += issue_str
+
+            # timetracker_hrs = 0
+            # timetracker_estimated_seconds = 0
+            # timetracker_remaining_seconds = 0
+
+            if 'originalEstimateSeconds' in issue['fields']['timetracking'].keys():
+                timetracker_estimated_seconds = int(
+                    issue['fields']['timetracking']['originalEstimateSeconds'])
+            if 'remainingEstimateSeconds' in issue['fields']['timetracking'].keys():
+                timetracker_remaining_seconds = int(
+                    issue['fields']['timetracking']['remainingEstimateSeconds'])
+
             timetracker_estimated_seconds_list.append(
-                int(issue['fields']['timetracking']['originalEstimateSeconds']))
+                timetracker_estimated_seconds)
+            timetracker_hrs_list.append(
+                float(timetracker_estimated_seconds) / 3600.0)
             timetracker_remaining_seconds_list.append(
-                int(issue['fields']['timetracking']['remainingEstimateSeconds']))
-            timetracker_hrs_list.append(float(
-                int(issue['fields']['timetracking']
-                    ['originalEstimateSeconds']) / 3600.0))
+                timetracker_remaining_seconds / 3600.0)
             timetracker_hrs_str_list.append(str(
-                float(
-                    int(issue['fields']['timetracking']
-                        ['originalEstimateSeconds']) / 3600.0)))
+                float(timetracker_estimated_seconds / 3600.0)))
 
         hrs_estimation_str = '+'.join(timetracker_hrs_str_list)
         total_estimated_hrs = sum(timetracker_hrs_list)
